@@ -152,24 +152,14 @@ for k, v in {
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ─── TELEGRAM NOTIFICATION ──────────────────────────────────────────────────
-def send_telegram_alert(msg):
-    try:
-        bot_token = st.secrets.get("TELEGRAM_BOT_TOKEN", "")
-        chat_id = st.secrets.get("TELEGRAM_CHAT_ID", "")
-        if bot_token and chat_id:
-            url = f"https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&text={msg}"
-            requests.get(url, timeout=3)
-    except:
-        pass
 
 # ─── UNIFIED ANGEL ONE LOGIN (P1: Merged Login Logic) ───────────────────────
 def angel_login():
     try:
         api_key   = st.secrets.get("ANGEL_API_KEY", "")
-        client_id = st.secrets.get("ANGEL_CLIENT_ID", "")
+        client_id = st.secrets.get("ANGEL_CLIENT_CODE", "") or st.secrets.get("ANGEL_CLIENT_ID", "")
         password  = st.secrets.get("ANGEL_PASSWORD", "")
-        totp_key  = st.secrets.get("ANGEL_TOTP", "")
+        totp_key  = st.secrets.get("ANGEL_TOTP_SECRET", "") or st.secrets.get("ANGEL_TOTP", "")
         
         if api_key and client_id and password and totp_key:
             from SmartApi import SmartConnect
@@ -765,8 +755,11 @@ with st.sidebar:
         st.markdown(f'<span class="login-err">🔴 {st.session_state.angel_status}</span>', unsafe_allow_html=True)
         if st.button("🔑 Login to Angel One", use_container_width=True):
             ok, msg = angel_login()
-            st.success(msg) if ok else st.error(msg)
-            if ok: st.rerun()
+            if ok:
+                st.success(msg)
+                st.rerun()
+            else:
+                st.error(msg)
 
     st.markdown("---")
     refresh_opt = st.selectbox("🔄 Auto Refresh Interval", ["30 seconds", "1 minute", "2 minutes"], index=0)
